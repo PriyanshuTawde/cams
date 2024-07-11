@@ -5,31 +5,20 @@ import collections
 
 # Replace these with your RTSP stream links
 rtsp_urls = [
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
-"rtsp://localhost:8554/-1615980001057415212",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    "rtsp://localhost:8554/7263969742911368228",
+    # Add more URLs as needed
 ]
 
 # Buffer size for each stream to smooth out fluctuations
@@ -39,7 +28,7 @@ buffer_size = 5  # Adjust buffer size as needed for smoothing
 frame_buffers = {i: collections.deque(maxlen=buffer_size) for i in range(len(rtsp_urls))}
 frame_locks = {i: threading.Lock() for i in range(len(rtsp_urls))}
 
-# Define grid dimensions (e.g., 3x4 grid for 12 streams)
+# Define grid dimensions (e.g., 2x2 grid for 4 streams)
 grid_rows, grid_cols = 5, 5
 frame_width, frame_height = 350, 200  # Desired size for each frame
 
@@ -87,8 +76,7 @@ while True:
         # Place the frame in the correct position in the grid
         grid_frame[row * frame_height:(row + 1) * frame_height, col * frame_width:(col + 1) * frame_width] = frames[i]
 
-    # Display the combined grid frame\
-    
+    # Display the combined grid frame
     cv2.imshow('RTSP Streams Grid', grid_frame)
 
     # Press 'q' to exit the loop

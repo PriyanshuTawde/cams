@@ -7,8 +7,6 @@ import time
 # List of RTSP links
 rtsp_links = [
 "rtsp://localhost:8554/2934767763659001694",
- 
-
 ]
 
 # Resolution for each stream
