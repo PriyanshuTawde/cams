@@ -1,59 +1,102 @@
-from flask import Flask, Response
 import cv2
+import numpy as np
+import threading
+import collections
 
-app = Flask(__name__)
+# Replace these with your RTSP stream links
+rtsp_urls = [
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+"rtsp://localhost:8554/-1615980001057415212",
+]
 
-@app.route('/')
-def index():
-    return "RTSP Proxy Server"
+# Buffer size for each stream to smooth out fluctuations
+buffer_size = 5  # Adjust buffer size as needed for smoothing
 
-def generate_frames(rtsp_url):
-    cap = cv2.VideoCapture(rtsp_url)
+# Initialize a dictionary to store buffered frames from each stream
+frame_buffers = {i: collections.deque(maxlen=buffer_size) for i in range(len(rtsp_urls))}
+frame_locks = {i: threading.Lock() for i in range(len(rtsp_urls))}
+
+# Define grid dimensions (e.g., 3x4 grid for 12 streams)
+grid_rows, grid_cols = 5, 5
+frame_width, frame_height = 350, 200  # Desired size for each frame
+
+# Initialize a list to store frames
+frames = [np.zeros((frame_height, frame_width, 3), dtype=np.uint8) for _ in rtsp_urls]
+
+def capture_stream(index, url):
+    cap = cv2.VideoCapture(url)
+    if not cap.isOpened():
+        print(f"Error: Unable to open RTSP stream {index} ({url})")
+        return
+    
     while True:
-        success, frame = cap.read()
-        if not success:
+        ret, frame = cap.read()
+        if not ret:
+            print(f"Error: Unable to read frame from stream {index} ({url})")
             break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-@app.route('/stream')
-def stream():
-    rtsp_url = "rtsp://admin:india*123@103.232.27.206:554/Streaming/channels/102"
-    return Response(generate_frames(rtsp_url), mimetype='multipart/x-mixed-replace; boundary=frame')
+        frame = cv2.resize(frame, (frame_width, frame_height))
+        with frame_locks[index]:
+            frame_buffers[index].append(frame)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    cap.release()
 
+# Create and start a thread for each stream
+threads = []
+for i, url in enumerate(rtsp_urls):
+    thread = threading.Thread(target=capture_stream, args=(i, url))
+    thread.start()
+    threads.append(thread)
 
+while True:
+    # Create a black canvas for the grid
+    grid_frame = np.zeros((grid_rows * frame_height, grid_cols * frame_width, 3), dtype=np.uint8)
 
+    for i in range(len(rtsp_urls)):
+        with frame_locks[i]:
+            if frame_buffers[i]:
+                frames[i] = frame_buffers[i][-1]  # Get the latest frame from the buffer
 
+        # Calculate grid cell position
+        row = i // grid_cols
+        col = i % grid_cols
 
+        # Place the frame in the correct position in the grid
+        grid_frame[row * frame_height:(row + 1) * frame_height, col * frame_width:(col + 1) * frame_width] = frames[i]
 
+    # Display the combined grid frame\
+    
+    cv2.imshow('RTSP Streams Grid', grid_frame)
 
-#C:\Users\priyn\Downloads\mediamtx_v1.8.3_windows_amd64>.\mediamtx.exe
+    # Press 'q' to exit the loop
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
+# Wait for all threads to complete
+for thread in threads:
+    thread.join()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+cv2.destroyAllWindows()

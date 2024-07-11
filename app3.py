@@ -6,18 +6,20 @@ import time
 
 # List of RTSP links
 rtsp_links = [
-"rtsp://localhost:8554/2934767763659001694",
- 
-
+"rtsp://localhost:8554/-5686015637569620976",
+"rtsp://localhost:8554/-5686015637569620976",
+"rtsp://localhost:8554/-5686015637569620976",
+"rtsp://localhost:8554/-5686015637569620976",
 ]
 
 # Resolution for each stream
-# width, height = 300, 200
-# width, height = 1000, 800
 width, height = 500, 250
 
 # Buffer size for each stream to smooth out fluctuations
-buffer_size = 10  # Increased buffer size
+buffer_size = 100  # Increased buffer size
+
+# Minimum number of frames to buffer before starting display
+min_buffer_fill = 10
 
 # Initialize a dictionary to store buffered frames from each stream
 frame_buffers = {i: deque(maxlen=buffer_size) for i in range(len(rtsp_links))}
@@ -34,11 +36,20 @@ def play_stream(rtsp_link, index):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
+    retry_attempts = 5  # Number of retries for failed frame retrieval
+
     while True:
         ret, frame = cap.read()
         if not ret:
-            print(f"Failed to retrieve frame from stream: {rtsp_link}")
-            break
+            print(f"Failed to retrieve frame from stream: {rtsp_link}. Retrying...")
+            for _ in range(retry_attempts):
+                time.sleep(0.1)  # Wait before retrying
+                ret, frame = cap.read()
+                if ret:
+                    break
+            if not ret:
+                print(f"Failed to retrieve frame after {retry_attempts} attempts. Skipping this frame.")
+                continue
         
         frame = cv2.resize(frame, (width, height))
 
@@ -47,7 +58,7 @@ def play_stream(rtsp_link, index):
                 frame_buffers[index].popleft()  # Discard the oldest frame
             frame_buffers[index].append(frame)
 
-        time.sleep(0.03)  # Control the frame rate to reduce load
+        time.sleep(0.05)  # Control the frame rate to reduce load
 
     cap.release()
     print(f"Stream closed: {rtsp_link}")
